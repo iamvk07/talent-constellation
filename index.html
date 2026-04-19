@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Talent Constellation — Enabled Talent</title>
+  <meta name="description" content="AI-powered talent matching visualization — see how Enabled Talent connects people with disabilities to the right opportunities." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <!-- Canvas container -->
+  <div id="canvas-container" role="img" aria-label="Interactive 3D visualization of Enabled Talent's AI matching network">
+    <canvas id="webgl"></canvas>
+    <div id="css2d-container"></div>
+  </div>
+
+  <!-- Header -->
+  <header id="header" aria-label="Application header">
+    <div class="header-left">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+          <circle cx="14" cy="14" r="13" stroke="#f59e0b" stroke-width="2"/>
+          <circle cx="14" cy="14" r="6" fill="#f59e0b" opacity="0.8"/>
+          <circle cx="14" cy="14" r="2" fill="#ffffff"/>
+        </svg>
+        <span class="logo-text">Enabled Talent</span>
+      </div>
+      <div class="title-block">
+        <h1 class="main-title">Talent Constellation</h1>
+        <p class="subtitle">AI-Powered Inclusive Matching</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="stat-pill" id="stat-candidates" aria-live="polite">
+        <span class="stat-num" id="count-candidates">0</span>
+        <span class="stat-label">Candidates</span>
+      </div>
+      <div class="stat-pill" id="stat-employers">
+        <span class="stat-num" id="count-employers">0</span>
+        <span class="stat-label">Employers</span>
+      </div>
+      <div class="stat-pill highlight" id="stat-matches">
+        <span class="stat-num" id="count-matches">0</span>
+        <span class="stat-label">Matches</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hint bar -->
+  <div id="hint-bar" aria-label="Interaction instructions" role="status">
+    <span id="hint-text">Click any node to explore · Scroll to zoom · Drag to rotate</span>
+  </div>
+
+  <!-- Info Panel -->
+  <aside id="info-panel" class="panel-closed" aria-label="Node details" role="complementary">
+    <button id="panel-close" aria-label="Close panel">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div id="panel-content">
+      <div id="panel-type-badge"></div>
+      <h2 id="panel-name"></h2>
+      <p id="panel-description"></p>
+      <div id="panel-tags"></div>
+      <div id="panel-matches-section">
+        <h3 id="panel-matches-title"></h3>
+        <ul id="panel-matches-list"></ul>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Tooltip -->
+  <div id="tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <!-- Loading screen -->
+  <div id="loading-screen" aria-label="Loading visualization" role="status">
+    <div class="loading-inner">
+      <div class="loading-orb"></div>
+      <p class="loading-text">Mapping talent connections<span class="loading-dots"></span></p>
+    </div>
+  </div>
+
+  <!-- Skip link for accessibility -->
+  <a href="#info-panel" class="skip-link">Skip to details panel</a>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
