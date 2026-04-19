@@ -77,6 +77,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .author-name:hover{color:var(--txt);border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07)}
 .li-btn{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#0a66c2;padding:7px 14px;background:rgba(10,102,194,.12);border:1px solid rgba(10,102,194,.35);border-radius:50px;backdrop-filter:blur(12px);transition:all var(--ease);text-decoration:none;cursor:pointer;white-space:nowrap}
 .li-btn:hover{background:rgba(10,102,194,.22);border-color:rgba(10,102,194,.6);color:#3b9ddd}
+/* ── Feature 1: Skill filter search bar ── */
+#srch{position:fixed;top:68px;left:50%;transform:translateX(-50%);z-index:100;display:flex;align-items:center;background:var(--surf2);border:1px solid var(--brd);border-radius:50px;backdrop-filter:blur(14px);transition:border-color var(--ease),box-shadow var(--ease);pointer-events:auto}
+#srch:focus-within{border-color:rgba(129,140,248,.5);box-shadow:0 0 0 3px rgba(129,140,248,.12)}
+.sico{position:absolute;left:13px;color:var(--dim);pointer-events:none;display:flex;align-items:center}
+#sf{background:none;border:none;outline:none;color:var(--txt);font-family:var(--font);font-size:13px;padding:9px 12px 9px 36px;width:240px}
+#sf::placeholder{color:var(--dim)}
+#scl{background:none;border:none;color:var(--mut);cursor:pointer;padding:0 14px 0 4px;font-size:20px;line-height:1;display:none;transition:color var(--ease)}
+#scl.show{display:block}
+#scl:hover{color:var(--txt)}
+#fcount{position:fixed;top:112px;left:50%;transform:translateX(-50%);z-index:100;font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-d);border:1px solid rgba(129,140,248,.25);border-radius:20px;padding:3px 12px;display:none;white-space:nowrap;pointer-events:none}
+/* ── Feature 2: Match pulse ring ── */
+.pring{position:absolute;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);animation:pr 1.4s ease-out forwards}
+@keyframes pr{0%{opacity:.85;width:22px;height:22px;border:2px solid var(--gold)}100%{opacity:0;width:90px;height:90px;border:1.5px solid var(--gold)}}
 @media(max-width:640px){
   .sep,.sub{display:none}
   .st{min-width:48px;padding:4px 8px}.sn{font-size:15px}
@@ -84,6 +97,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
   #panel.open{transform:translateY(0)}
   #author{bottom:70px;right:12px;gap:6px}
   .author-name,.li-btn{font-size:11px;padding:6px 10px}
+  #srch{top:auto;bottom:136px;width:calc(100vw - 48px)}
+  #sf{width:100%}
+  #fcount{top:auto;bottom:186px}
 }
 </style>
 </head>
@@ -108,6 +124,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <div class="st hl"><span class="sn" id="nm">0</span><span class="sl">Matches</span></div>
   </div>
 </header>
+
+<!-- Feature 1: Skill filter bar -->
+<div id="srch">
+  <span class="sico">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+  </span>
+  <input id="sf" type="text" placeholder="Filter by skill, role or industry…" autocomplete="off" spellcheck="false"/>
+  <button id="scl" title="Clear filter">×</button>
+</div>
+<div id="fcount"></div>
+
 <div id="hint">Click any node to explore &nbsp;&middot;&nbsp; Scroll to zoom &nbsp;&middot;&nbsp; Drag to rotate</div>
 <div id="panel">
   <button id="pcls"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 3L3 11M3 3l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
@@ -241,8 +270,8 @@ const mkMat = color => new THREE.ShaderMaterial({
     uColor: { value: new THREE.Color(color) }, uTime: { value: 0 },
     uPhase: { value: Math.random() }, uSel: { value: 0 }, uHov: { value: 0 }, uDim: { value: 0 }
   },
-  vertexShader: `uniform float uTime,uPhase,uSel,uHov;varying vec3 vN,vP;varying float vPulse;void main(){vN=normalize(normalMatrix*normal);float pulse=sin(uTime*2.+uPhase*6.28)*.5+.5;vPulse=pulse;float sc=1.+(uHov*.18)+(uSel*.28)+(pulse*uSel*.07);vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position*sc,1.);}`,
-  fragmentShader: `uniform vec3 uColor;uniform float uTime,uSel,uHov,uDim;varying vec3 vN,vP;varying float vPulse;void main(){vec3 vd=normalize(cameraPosition-vP);float fr=pow(1.-max(dot(vN,vd),0.),2.8);vec3 c=uColor*(1.+(uHov*.45)+(uSel*.7));c*=sin(uTime*2.8+vP.y*6.)*.08+.92;c=mix(c,mix(c,vec3(1.),.5),fr*(.55+uSel*.45));float alpha=mix(.18,1.,1.-uDim*.82);c=mix(c,vec3(.22,.22,.32),uDim*.75);gl_FragColor=vec4(c,alpha);}`,
+  vertexShader: `uniform float uTime,uPhase,uSel,uHov;varying vec3 vN,vP;void main(){vN=normalize(normalMatrix*normal);float pulse=sin(uTime*2.+uPhase*6.28)*.5+.5;float sc=1.+(uHov*.18)+(uSel*.28)+(pulse*uSel*.07);vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position*sc,1.);}`,
+  fragmentShader: `uniform vec3 uColor;uniform float uTime,uSel,uHov,uDim;varying vec3 vN,vP;void main(){vec3 vd=normalize(cameraPosition-vP);float fr=pow(1.-max(dot(vN,vd),0.),2.8);vec3 c=uColor*(1.+(uHov*.45)+(uSel*.7));c*=sin(uTime*2.8+vP.y*6.)*.08+.92;c=mix(c,mix(c,vec3(1.),.5),fr*(.55+uSel*.45));float alpha=mix(.18,1.,1.-uDim*.82);c=mix(c,vec3(.22,.22,.32),uDim*.75);gl_FragColor=vec4(c,alpha);}`,
   transparent: true
 });
 
@@ -307,7 +336,7 @@ const setConns = aid => {
   });
 };
 
-// ── INTERACTION ───────────────────────────────────────────────────────
+// ── INTERACTION STATE ─────────────────────────────────────────────────
 const ray = new THREE.Raycaster();
 const mouse = new THREE.Vector2(-9999, -9999);
 let hovId = null, selId = null;
@@ -334,6 +363,7 @@ function tw(obj, target, dur, cb) {
   })();
 }
 
+// ── MOUSE INTERACTION ─────────────────────────────────────────────────
 canvas.addEventListener('mousemove', ev => {
   mouse.x = (ev.clientX / W()) * 2 - 1; mouse.y = -(ev.clientY / H()) * 2 + 1;
   ray.setFromCamera(mouse, camera);
@@ -351,12 +381,36 @@ canvas.addEventListener('click', ev => {
   const hit = ray.intersectObjects(Object.values(nodes).map(n => n.mesh), false)[0];
   const id = hit?.object.userData.id || null;
   if (!id || id === selId) { deselect(); return; }
+  if (filterQuery) { sfEl.value = ''; applyFilter(''); }
   select(id);
 });
 window.addEventListener('keydown', ev => { if (ev.key === 'Escape') deselect(); });
 document.getElementById('pcls').addEventListener('click', deselect);
 
+// ── Feature 3: TOUCH SUPPORT ──────────────────────────────────────────
+let touchStartPos = null;
+canvas.addEventListener('touchstart', ev => {
+  if (ev.touches.length === 1) touchStartPos = { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+}, { passive: true });
+canvas.addEventListener('touchend', ev => {
+  if (!touchStartPos || ev.changedTouches.length !== 1) { touchStartPos = null; return; }
+  const dx = ev.changedTouches[0].clientX - touchStartPos.x;
+  const dy = ev.changedTouches[0].clientY - touchStartPos.y;
+  touchStartPos = null;
+  if (Math.sqrt(dx * dx + dy * dy) > 12) return; // drag, not tap
+  const x = ev.changedTouches[0].clientX, y = ev.changedTouches[0].clientY;
+  mouse.x = (x / W()) * 2 - 1; mouse.y = -(y / H()) * 2 + 1;
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObjects(Object.values(nodes).map(n => n.mesh), false)[0];
+  const id = hit?.object.userData.id || null;
+  if (!id || id === selId) { deselect(); return; }
+  if (filterQuery) { sfEl.value = ''; applyFilter(''); }
+  select(id);
+}, { passive: true });
+
+// ── SELECT / DESELECT ─────────────────────────────────────────────────
 function select(id) {
+  pulseId = null;
   selId = id;
   const matches = matchesOf(id), mids = matches.map(m => m.id);
   setSel(id, mids); setConns(id); openPanel(nodes[id].data, matches); hideTip();
@@ -364,17 +418,65 @@ function select(id) {
   const t = nodes[id].pos.clone(), cd = t.clone().normalize().multiplyScalar(22);
   tw(camera.position, { x: t.x + cd.x, y: t.y + cd.y, z: t.z + cd.z }, 1.4, () => controls.update());
   tw(controls.target, { x: t.x * 0.35, y: t.y * 0.35, z: t.z * 0.35 }, 1.4, () => controls.update());
-  document.getElementById('hint').textContent = 'Press Esc or x to deselect';
+  document.getElementById('hint').textContent = 'Press Esc or × to deselect';
 }
 
 function deselect() {
-  selId = null; clearAll(); setConns(null); closePanel(); controls.autoRotate = true;
+  selId = null; pulseId = null;
+  nextPulse = performance.now() + 6000;
+  clearAll(); setConns(null); closePanel(); controls.autoRotate = true;
   tw(camera.position, { x: 0, y: 2, z: 34 }, 1.2, () => controls.update());
   tw(controls.target, { x: 0, y: 0, z: 0 }, 1.2, () => controls.update());
   document.getElementById('hint').textContent = 'Click any node to explore · Scroll to zoom · Drag to rotate';
 }
 
-// ── UI ────────────────────────────────────────────────────────────────
+// ── Feature 1: SKILL FILTER ───────────────────────────────────────────
+let filterQuery = '';
+const sfEl = document.getElementById('sf');
+const sclEl = document.getElementById('scl');
+const fcountEl = document.getElementById('fcount');
+
+function applyFilter(q) {
+  filterQuery = q.trim();
+  sclEl.classList.toggle('show', !!filterQuery);
+  if (filterQuery) {
+    if (selId) { selId = null; closePanel(); controls.autoRotate = true; nextPulse = performance.now() + 8000; }
+    if (pulseId) { pulseId = null; }
+  }
+  renderFilter();
+}
+
+function renderFilter() {
+  if (!filterQuery) {
+    if (!selId) { clearAll(); setConns(null); }
+    fcountEl.style.display = 'none';
+    return;
+  }
+  const lq = filterQuery.toLowerCase();
+  let matchCount = 0;
+  Object.values(nodes).forEach(n => {
+    const d = n.data;
+    const terms = d.type === 'candidate' ? (d.skills || []) : [(d.industry || ''), ...(d.roles || [])];
+    const hit = terms.some(s => s.toLowerCase().includes(lq));
+    if (hit) matchCount++;
+    n.mesh.material.uniforms.uDim.value = hit ? 0 : 1;
+    n.mesh.material.uniforms.uSel.value = 0;
+  });
+  conns.forEach(c => {
+    const cnDim = nodes[c.cid].mesh.material.uniforms.uDim.value;
+    const enDim = nodes[c.eid].mesh.material.uniforms.uDim.value;
+    const active = !cnDim && !enDim;
+    c.line.material.opacity = active ? 0.3 : 0.015;
+    c.particles.forEach(p => { p.mesh.visible = active; p.mesh.material.opacity = active ? 0.8 : 0; });
+  });
+  fcountEl.textContent = `${matchCount} node${matchCount !== 1 ? 's' : ''} matched`;
+  fcountEl.style.display = 'block';
+}
+
+sfEl.addEventListener('input', ev => applyFilter(ev.target.value));
+sclEl.addEventListener('click', () => { sfEl.value = ''; applyFilter(''); });
+
+// ── UI PANEL ──────────────────────────────────────────────────────────
 function openPanel(d, matches) {
   const isE = d.type === 'employer';
   const badge = document.getElementById('pbadge');
@@ -427,6 +529,25 @@ function updateLabels() {
 
 setTimeout(() => document.getElementById('load').classList.add('gone'), 1100);
 
+// ── Feature 2: MATCH PULSE ────────────────────────────────────────────
+let pulseId = null;
+let pulseExpiry = 0;
+let nextPulse = 0;
+let pulseInitialized = false;
+
+function spawnPulseRing(nodeId) {
+  const n = nodes[nodeId]; if (!n) return;
+  const v = n.mesh.position.clone().project(camera);
+  if (v.z > 1) return; // behind camera
+  const x = (v.x * 0.5 + 0.5) * W(), y = (-(v.y * 0.5 - 0.5)) * H();
+  const ring = document.createElement('div');
+  ring.className = 'pring';
+  ring.style.left = x + 'px';
+  ring.style.top = y + 'px';
+  lc.appendChild(ring);
+  setTimeout(() => ring.remove(), 1500);
+}
+
 // ── LOOP ──────────────────────────────────────────────────────────────
 let then = performance.now();
 (function loop() {
@@ -436,6 +557,28 @@ let then = performance.now();
   starMat.uniforms.uTime.value = t;
   Object.values(nodes).forEach(n => n.mesh.material.uniforms.uTime.value = t);
   conns.forEach(c => c.particles.forEach(p => { p.t = (p.t + p.speed * dt) % 1; c.curve.getPoint(p.t, p.mesh.position); }));
+
+  // Initialize pulse timer after first frame
+  if (!pulseInitialized) { nextPulse = now + 9000; pulseInitialized = true; }
+
+  // Auto match-pulse when idle (no selection, no filter active)
+  if (!selId && !filterQuery) {
+    if (pulseId && now > pulseExpiry) {
+      pulseId = null;
+      clearAll();
+      setConns(null);
+    } else if (!pulseId && now > nextPulse) {
+      const emp = EMP[Math.floor(Math.random() * EMP.length)];
+      pulseId = emp.id;
+      const mids = matchesOf(emp.id).map(m => m.id);
+      setSel(emp.id, mids);
+      setConns(emp.id);
+      spawnPulseRing(emp.id);
+      pulseExpiry = now + 3200;
+      nextPulse = now + 16000;
+    }
+  }
+
   controls.update(); composer.render(); updateLabels();
 })();
 </script>
