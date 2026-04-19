@@ -1,92 +1,428 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Talent Constellation — Enabled Talent</title>
-  <meta name="description" content="AI-powered talent matching visualization — see how Enabled Talent connects people with disabilities to the right opportunities." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <script type="module" crossorigin src="/talent-constellation/assets/index-CZloWWqp.js"></script>
-  <link rel="stylesheet" crossorigin href="/talent-constellation/assets/index-zPfN4ojQ.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Talent Constellation — Enabled Talent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#f59e0b;--gold-d:rgba(245,158,11,.15);--gold-g:rgba(245,158,11,.4);
+  --blue:#818cf8;--blue-d:rgba(129,140,248,.15);--cyan:#22d3ee;
+  --bg:#04040f;--surf:rgba(10,10,30,.88);--surf2:rgba(15,15,42,.93);
+  --brd:rgba(255,255,255,.08);--txt:#f1f5f9;--mut:#94a3b8;--dim:#475569;
+  --r:12px;--rs:8px;--ease:.3s cubic-bezier(.4,0,.2,1);
+  --font:'Space Grotesk',system-ui,sans-serif
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--txt);-webkit-font-smoothing:antialiased}
+#app{position:fixed;inset:0;z-index:0}canvas{display:block;width:100%;height:100%}
+#lbl{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#hdr{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(180deg,rgba(4,4,15,.97) 0%,transparent 100%);pointer-events:none}
+.hdr-l{display:flex;align-items:center}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-t{font-size:12px;font-weight:600;color:var(--gold);letter-spacing:.06em;text-transform:uppercase}
+.sep{width:1px;height:30px;background:var(--brd);margin:0 14px}
+.ttl{font-size:17px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.sub{font-size:10px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.stats{display:flex;gap:8px;pointer-events:auto}
+.st{display:flex;flex-direction:column;align-items:center;background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:6px 14px;backdrop-filter:blur(12px);min-width:62px}
+.st.hl{border-color:var(--gold-g);background:var(--gold-d)}
+.sn{font-size:20px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.st.hl .sn{color:var(--gold)}
+.sl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+#hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:100;background:var(--surf);border:1px solid var(--brd);border-radius:50px;padding:8px 20px;backdrop-filter:blur(12px);font-size:12px;color:var(--mut);pointer-events:none;white-space:nowrap}
+#panel{position:fixed;top:50%;right:24px;transform:translateY(-50%) translateX(calc(100% + 40px));z-index:100;width:300px;max-height:80vh;background:var(--surf2);border:1px solid var(--brd);border-radius:var(--r);backdrop-filter:blur(20px);overflow-y:auto;transition:transform .45s cubic-bezier(.34,1.56,.64,1);scrollbar-width:thin}
+#panel.open{transform:translateY(-50%) translateX(0)}
+#pcls{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.06);border:1px solid var(--brd);border-radius:6px;color:var(--mut);cursor:pointer;padding:6px;display:flex;align-items:center;justify-content:center;transition:all var(--ease)}
+#pcls:hover{background:rgba(255,255,255,.13);color:var(--txt)}
+#pbdy{padding:20px}
+.badge{display:inline-flex;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:12px}
+.badge.emp{background:var(--gold-d);color:var(--gold);border:1px solid var(--gold-g)}
+.badge.cand{background:var(--blue-d);color:var(--blue);border:1px solid rgba(129,140,248,.3)}
+#pname{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+#pdesc{font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:14px}
+#ptags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.tag{font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid var(--brd);color:var(--mut)}
+.tag.sk{border-color:rgba(34,211,238,.25);color:var(--cyan)}
+.tag.ac{border-color:rgba(129,140,248,.25);color:var(--blue)}
+.tag.in{border-color:var(--gold-g);color:var(--gold)}
+#msec{border-top:1px solid var(--brd);padding-top:14px}
+#mtitle{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+#mlist{list-style:none;display:flex;flex-direction:column;gap:7px}
+#mlist li{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid var(--brd);border-radius:var(--rs);font-size:12px;color:var(--mut);cursor:pointer;transition:all var(--ease)}
+#mlist li:hover{background:rgba(255,255,255,.08);color:var(--txt)}
+.mdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.msc{margin-left:auto;font-size:11px;font-weight:600;color:var(--gold)}
+#tip{position:fixed;z-index:200;background:var(--surf2);border:1px solid var(--brd);border-radius:var(--rs);padding:8px 12px;font-size:12px;backdrop-filter:blur(12px);pointer-events:none;opacity:0;transition:opacity .15s;max-width:190px}
+#tip.on{opacity:1}
+.nl{position:absolute;transform:translate(-50%,-100%);background:rgba(4,4,15,.78);border:1px solid rgba(255,255,255,.1);color:var(--txt);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap;backdrop-filter:blur(8px);pointer-events:none;transition:opacity .25s}
+.nl.emp{color:var(--gold);border-color:var(--gold-g);font-weight:600;font-size:12px}
+.nl.cand{color:var(--blue);border-color:rgba(129,140,248,.3)}
+#load{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .8s,visibility .8s}
+#load.gone{opacity:0;visibility:hidden;pointer-events:none}
+.orb{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#f59e0b,rgba(245,158,11,.2));box-shadow:0 0 40px rgba(245,158,11,.5),0 0 80px rgba(245,158,11,.2);animation:po 2s ease-in-out infinite}
+@keyframes po{0%,100%{transform:scale(1)}50%{transform:scale(1.12);box-shadow:0 0 60px rgba(245,158,11,.7),0 0 120px rgba(245,158,11,.3)}}
+.lt{font-size:14px;color:var(--mut);letter-spacing:.05em;margin-top:20px}
+.ld::after{content:'';animation:ld 1.5s steps(4,end) infinite}
+@keyframes ld{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
+@media(max-width:640px){
+  .sep,.sub{display:none}
+  .st{min-width:48px;padding:4px 8px}.sn{font-size:15px}
+  #panel{width:calc(100vw - 32px);right:16px;top:auto;bottom:80px;transform:translateY(calc(100% + 40px))}
+  #panel.open{transform:translateY(0)}
+}
+</style>
 </head>
 <body>
-  <!-- Canvas container -->
-  <div id="canvas-container" role="img" aria-label="Interactive 3D visualization of Enabled Talent's AI matching network">
-    <canvas id="webgl"></canvas>
-    <div id="css2d-container"></div>
-  </div>
-
-  <!-- Header -->
-  <header id="header" aria-label="Application header">
-    <div class="header-left">
-      <div class="logo">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-          <circle cx="14" cy="14" r="13" stroke="#f59e0b" stroke-width="2"/>
-          <circle cx="14" cy="14" r="6" fill="#f59e0b" opacity="0.8"/>
-          <circle cx="14" cy="14" r="2" fill="#ffffff"/>
-        </svg>
-        <span class="logo-text">Enabled Talent</span>
-      </div>
-      <div class="title-block">
-        <h1 class="main-title">Talent Constellation</h1>
-        <p class="subtitle">AI-Powered Inclusive Matching</p>
-      </div>
-    </div>
-    <div class="header-right">
-      <div class="stat-pill" id="stat-candidates" aria-live="polite">
-        <span class="stat-num" id="count-candidates">0</span>
-        <span class="stat-label">Candidates</span>
-      </div>
-      <div class="stat-pill" id="stat-employers">
-        <span class="stat-num" id="count-employers">0</span>
-        <span class="stat-label">Employers</span>
-      </div>
-      <div class="stat-pill highlight" id="stat-matches">
-        <span class="stat-num" id="count-matches">0</span>
-        <span class="stat-label">Matches</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- Hint bar -->
-  <div id="hint-bar" aria-label="Interaction instructions" role="status">
-    <span id="hint-text">Click any node to explore · Scroll to zoom · Drag to rotate</span>
-  </div>
-
-  <!-- Info Panel -->
-  <aside id="info-panel" class="panel-closed" aria-label="Node details" role="complementary">
-    <button id="panel-close" aria-label="Close panel">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<div id="app"><canvas id="c"></canvas><div id="lbl"></div></div>
+<header id="hdr">
+  <div class="hdr-l">
+    <div class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#f59e0b" stroke-width="1.5"/>
+        <circle cx="13" cy="13" r="5.5" fill="#f59e0b" opacity=".75"/>
+        <circle cx="13" cy="13" r="2" fill="#fff"/>
       </svg>
-    </button>
-    <div id="panel-content">
-      <div id="panel-type-badge"></div>
-      <h2 id="panel-name"></h2>
-      <p id="panel-description"></p>
-      <div id="panel-tags"></div>
-      <div id="panel-matches-section">
-        <h3 id="panel-matches-title"></h3>
-        <ul id="panel-matches-list"></ul>
-      </div>
+      <span class="logo-t">Enabled Talent</span>
     </div>
-  </aside>
-
-  <!-- Tooltip -->
-  <div id="tooltip" role="tooltip" aria-hidden="true"></div>
-
-  <!-- Loading screen -->
-  <div id="loading-screen" aria-label="Loading visualization" role="status">
-    <div class="loading-inner">
-      <div class="loading-orb"></div>
-      <p class="loading-text">Mapping talent connections<span class="loading-dots"></span></p>
-    </div>
+    <div class="sep"></div>
+    <div><div class="ttl">Talent Constellation</div><div class="sub">AI-Powered Inclusive Matching</div></div>
   </div>
+  <div class="stats">
+    <div class="st"><span class="sn" id="nc">0</span><span class="sl">Candidates</span></div>
+    <div class="st"><span class="sn" id="ne">0</span><span class="sl">Employers</span></div>
+    <div class="st hl"><span class="sn" id="nm">0</span><span class="sl">Matches</span></div>
+  </div>
+</header>
+<div id="hint">Click any node to explore &nbsp;&middot;&nbsp; Scroll to zoom &nbsp;&middot;&nbsp; Drag to rotate</div>
+<div id="panel">
+  <button id="pcls"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 3L3 11M3 3l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+  <div id="pbdy">
+    <div id="pbadge" class="badge"></div>
+    <div id="pname"></div><div id="pdesc"></div>
+    <div id="ptags"></div>
+    <div id="msec"><div id="mtitle"></div><ul id="mlist"></ul></div>
+  </div>
+</div>
+<div id="tip"></div>
+<div id="load"><div style="display:flex;flex-direction:column;align-items:center"><div class="orb"></div><p class="lt">Mapping talent connections<span class="ld"></span></p></div></div>
 
-  <!-- Skip link for accessibility -->
-  <a href="#info-panel" class="skip-link">Skip to details panel</a>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
+// ── DATA ──────────────────────────────────────────────────────────────
+const EMP = [
+  {id:'e1',type:'employer',name:'Shopify',industry:'E-Commerce Tech',desc:'Global e-commerce platform committed to inclusive hiring and accessible workplaces.',roles:['Frontend Engineer','Product Designer','Data Analyst'],acc:['Remote-first','Flexible hours','Screen-reader tools'],color:'#f59e0b'},
+  {id:'e2',type:'employer',name:'RBC',industry:'Financial Services',desc:"Canada's largest bank with dedicated accessibility programs.",roles:['Software Developer','UX Researcher','Business Analyst'],acc:['Adaptive workstations','Sign language support','Mental health programs'],color:'#f59e0b'},
+  {id:'e3',type:'employer',name:'Microsoft',industry:'Enterprise Software',desc:'Pioneer in accessible technology with industry-leading disability hiring.',roles:['Accessibility Engineer','Cloud Developer','Program Manager'],acc:['Voice control tools','Quiet workspaces','Custom ergonomic setup'],color:'#f59e0b'},
+  {id:'e4',type:'employer',name:'Telus',industry:'Telecommunications',desc:'Canadian telco with strong DEI programs and assistive technology infrastructure.',roles:['Network Engineer','CX Designer','AI Developer'],acc:['Hybrid work','Assistive tech stipend','Neurodiversity support'],color:'#f59e0b'},
+  {id:'e5',type:'employer',name:'Deloitte',industry:'Professional Services',desc:'Global firm with formalized disability inclusion strategies and mentorship.',roles:['Consultant','Data Scientist','DevOps Engineer'],acc:['Flexible deadlines','Captioning services','Accessible offices'],color:'#f59e0b'},
+  {id:'e6',type:'employer',name:'Ubisoft',industry:'Gaming & Creative',desc:'Game studio building accessible workflows and inclusive creative environments.',roles:['Game Developer','QA Engineer','3D Artist'],acc:['Sensory-friendly spaces','Remote work','Visual accommodation tools'],color:'#f59e0b'},
+];
+const CAND = [
+  {id:'c01',type:'candidate',name:'Priya S.',skills:['React','TypeScript','Accessibility'],acc:'Low vision',score:94,employers:['e1','e3'],color:'#818cf8'},
+  {id:'c02',type:'candidate',name:'Jordan M.',skills:['Python','ML','Data Viz'],acc:'ADHD',score:89,employers:['e1','e5'],color:'#818cf8'},
+  {id:'c03',type:'candidate',name:'Chen W.',skills:['Cloud','Azure','DevOps'],acc:'Deaf',score:92,employers:['e3','e2'],color:'#818cf8'},
+  {id:'c04',type:'candidate',name:'Amara T.',skills:['UX Design','Figma','Research'],acc:'Mobility impairment',score:87,employers:['e2','e4'],color:'#818cf8'},
+  {id:'c05',type:'candidate',name:'Lucas F.',skills:['Node.js','GraphQL','AWS'],acc:'Autism spectrum',score:96,employers:['e1','e5'],color:'#818cf8'},
+  {id:'c06',type:'candidate',name:'Yuki N.',skills:['Game Dev','Unity','C#'],acc:'Chronic illness',score:91,employers:['e6'],color:'#818cf8'},
+  {id:'c07',type:'candidate',name:'Fatima A.',skills:['Data Science','SQL','Tableau'],acc:'Blind',score:88,employers:['e2','e5'],color:'#818cf8'},
+  {id:'c08',type:'candidate',name:'Marcus B.',skills:['Networking','5G','Security'],acc:'Hearing impaired',score:85,employers:['e4'],color:'#818cf8'},
+  {id:'c09',type:'candidate',name:'Sofia L.',skills:['3D Art','Blender','Unreal'],acc:'Dyslexia',score:90,employers:['e6'],color:'#818cf8'},
+  {id:'c10',type:'candidate',name:'Omar K.',skills:['Backend','Go','Kubernetes'],acc:'PTSD',score:83,employers:['e3','e4'],color:'#818cf8'},
+  {id:'c11',type:'candidate',name:'Nia R.',skills:['Product','Agile','Analytics'],acc:'ADHD',score:86,employers:['e1','e2'],color:'#818cf8'},
+  {id:'c12',type:'candidate',name:'Ethan J.',skills:['iOS','Swift','VoiceOver'],acc:'Low vision',score:93,employers:['e3'],color:'#818cf8'},
+  {id:'c13',type:'candidate',name:'Lena M.',skills:['QA','Selenium','Jira'],acc:'Cerebral palsy',score:88,employers:['e6','e5'],color:'#818cf8'},
+  {id:'c14',type:'candidate',name:'Raj P.',skills:['AI/ML','TensorFlow','Python'],acc:'Autism spectrum',score:95,employers:['e3','e4'],color:'#818cf8'},
+  {id:'c15',type:'candidate',name:'Zoe H.',skills:['React Native','Expo','Firebase'],acc:'Anxiety disorder',score:82,employers:['e1'],color:'#818cf8'},
+  {id:'c16',type:'candidate',name:'Kwame A.',skills:['Consulting','Strategy','Excel'],acc:'Mobility impairment',score:87,employers:['e5','e2'],color:'#818cf8'},
+  {id:'c17',type:'candidate',name:'Iris C.',skills:['Cybersecurity','Pen Testing','SIEM'],acc:'Deaf',score:91,employers:['e2','e3'],color:'#818cf8'},
+  {id:'c18',type:'candidate',name:'Ben T.',skills:['Embedded C','IoT','RTOS'],acc:'ADHD',score:84,employers:['e4'],color:'#818cf8'},
+  {id:'c19',type:'candidate',name:'Aisha N.',skills:['Accessibility','WCAG','React'],acc:'Blind',score:97,employers:['e3','e1'],color:'#818cf8'},
+  {id:'c20',type:'candidate',name:'Dev S.',skills:['Java','Spring','Microservices'],acc:'Chronic pain',score:86,employers:['e2','e5'],color:'#818cf8'},
+  {id:'c21',type:'candidate',name:'Maya V.',skills:['UI Animation','GSAP','Three.js'],acc:'Dyslexia',score:92,employers:['e6','e1'],color:'#818cf8'},
+  {id:'c22',type:'candidate',name:'Tae K.',skills:['Blockchain','Solidity','Web3'],acc:'Autism spectrum',score:88,employers:['e5'],color:'#818cf8'},
+  {id:'c23',type:'candidate',name:'Nadia F.',skills:['Content Strategy','SEO','CMS'],acc:'Multiple sclerosis',score:80,employers:['e4','e1'],color:'#818cf8'},
+  {id:'c24',type:'candidate',name:'Alex R.',skills:['Systems Design','Rust','WASM'],acc:'PTSD',score:89,employers:['e3','e6'],color:'#818cf8'},
+  {id:'c25',type:'candidate',name:'Chloe P.',skills:['Business Intel.','Power BI','SQL'],acc:'Chronic illness',score:85,employers:['e2','e5'],color:'#818cf8'},
+];
+const ALL = [...EMP,...CAND];
+const byId = id => ALL.find(n => n.id === id);
+const matchesOf = id => { const n = byId(id); if (!n) return []; return n.type === 'employer' ? CAND.filter(c => c.employers.includes(id)) : n.employers.map(eid => byId(eid)).filter(Boolean); };
+
+// ── RENDERER ──────────────────────────────────────────────────────────
+const W = () => window.innerWidth, H = () => window.innerHeight;
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W(), H());
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x04040f);
+scene.fog = new THREE.FogExp2(0x04040f, 0.011);
+
+const camera = new THREE.PerspectiveCamera(55, W() / H(), 0.1, 500);
+camera.position.set(0, 2, 34);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.05;
+controls.rotateSpeed = 0.4; controls.zoomSpeed = 0.7;
+controls.minDistance = 12; controls.maxDistance = 65;
+controls.autoRotate = true; controls.autoRotateSpeed = 0.25;
+controls.enablePan = false;
+
+scene.add(new THREE.AmbientLight(0x1a1a3e, 3));
+const pl1 = new THREE.PointLight(0x818cf8, 4, 90); pl1.position.set(-18, 14, 8); scene.add(pl1);
+const pl2 = new THREE.PointLight(0xf59e0b, 3, 70); pl2.position.set(18, -10, 4); scene.add(pl2);
+const pl3 = new THREE.PointLight(0x22d3ee, 2, 60); pl3.position.set(0, 20, -10); scene.add(pl3);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(W(), H()), 1.5, 0.45, 0.08);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+window.addEventListener('resize', () => {
+  camera.aspect = W() / H(); camera.updateProjectionMatrix();
+  renderer.setSize(W(), H()); composer.setSize(W(), H());
+});
+
+// ── STARS ─────────────────────────────────────────────────────────────
+const SN = 7000;
+const sGeo = new THREE.BufferGeometry();
+const sp = new Float32Array(SN * 3), ss = new Float32Array(SN), sph = new Float32Array(SN);
+for (let i = 0; i < SN; i++) {
+  const r = 55 + Math.random() * 140, th = Math.random() * Math.PI * 2, ph = Math.acos(Math.random() * 2 - 1);
+  sp[i*3] = r*Math.sin(ph)*Math.cos(th); sp[i*3+1] = r*Math.sin(ph)*Math.sin(th); sp[i*3+2] = r*Math.cos(ph);
+  ss[i] = 0.4 + Math.random() * 1.4; sph[i] = Math.random();
+}
+sGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+sGeo.setAttribute('aSize', new THREE.BufferAttribute(ss, 1));
+sGeo.setAttribute('aPhase', new THREE.BufferAttribute(sph, 1));
+const starMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: { value: 0 }, uPR: { value: Math.min(devicePixelRatio, 2) } },
+  vertexShader: `uniform float uTime,uPR;attribute float aSize,aPhase;varying float vA;void main(){float tw=sin(uTime*1.4+aPhase*6.28)*.5+.5;vA=.25+tw*.75;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=aSize*(280./-mv.z)*uPR*(.6+tw*.4);gl_Position=projectionMatrix*mv;}`,
+  fragmentShader: `varying float vA;void main(){float d=length(gl_PointCoord-.5);float s=pow(1.-smoothstep(0.,.5,d),2.);gl_FragColor=vec4(.85,.9,1.,s*vA);}`,
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+});
+scene.add(new THREE.Points(sGeo, starMat));
+
+// ── NODE MATERIAL ─────────────────────────────────────────────────────
+const mkMat = color => new THREE.ShaderMaterial({
+  uniforms: {
+    uColor: { value: new THREE.Color(color) }, uTime: { value: 0 },
+    uPhase: { value: Math.random() }, uSel: { value: 0 }, uHov: { value: 0 }, uDim: { value: 0 }
+  },
+  vertexShader: `uniform float uTime,uPhase,uSel,uHov;varying vec3 vN,vP;varying float vPulse;void main(){vN=normalize(normalMatrix*normal);float pulse=sin(uTime*2.+uPhase*6.28)*.5+.5;vPulse=pulse;float sc=1.+(uHov*.18)+(uSel*.28)+(pulse*uSel*.07);vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position*sc,1.);}`,
+  fragmentShader: `uniform vec3 uColor;uniform float uTime,uSel,uHov,uDim;varying vec3 vN,vP;varying float vPulse;void main(){vec3 vd=normalize(cameraPosition-vP);float fr=pow(1.-max(dot(vN,vd),0.),2.8);vec3 c=uColor*(1.+(uHov*.45)+(uSel*.7));c*=sin(uTime*2.8+vP.y*6.)*.08+.92;c=mix(c,mix(c,vec3(1.),.5),fr*(.55+uSel*.45));float alpha=mix(.18,1.,1.-uDim*.82);c=mix(c,vec3(.22,.22,.32),uDim*.75);gl_FragColor=vec4(c,alpha);}`,
+  transparent: true
+});
+
+// ── FIBONACCI LAYOUT ──────────────────────────────────────────────────
+const fib = (count, radius, offset = 0) => {
+  const out = [], g = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < count; i++) {
+    const y = 1 - (i / (count - 1)) * 2, r = Math.sqrt(1 - y * y), th = g * (i + offset);
+    out.push(new THREE.Vector3(Math.cos(th) * r * radius, y * radius, Math.sin(th) * r * radius));
+  }
+  return out;
+};
+
+// ── BUILD NODES ───────────────────────────────────────────────────────
+const nodes = {}, lc = document.getElementById('lbl');
+
+fib(EMP.length, 7.5).forEach((pos, i) => {
+  const d = EMP[i];
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.78, 32, 32), mkMat(d.color));
+  mesh.position.copy(pos); mesh.userData.id = d.id; scene.add(mesh);
+  const div = document.createElement('div'); div.className = 'nl emp'; div.textContent = d.name; lc.appendChild(div);
+  nodes[d.id] = { mesh, pos: pos.clone(), data: d, lbl: div };
+});
+
+fib(CAND.length, 17, 80).forEach((pos, i) => {
+  const d = CAND[i];
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.37, 24, 24), mkMat(d.color));
+  mesh.position.copy(pos); mesh.userData.id = d.id; scene.add(mesh);
+  const div = document.createElement('div'); div.className = 'nl cand'; div.textContent = d.name; lc.appendChild(div);
+  nodes[d.id] = { mesh, pos: pos.clone(), data: d, lbl: div };
+});
+
+// ── CONNECTIONS ───────────────────────────────────────────────────────
+const conns = [];
+CAND.forEach(cand => {
+  const cn = nodes[cand.id]; if (!cn) return;
+  cand.employers.forEach(eid => {
+    const en = nodes[eid]; if (!en) return;
+    const mid = cn.pos.clone().add(en.pos).multiplyScalar(0.5);
+    mid.y += (Math.random() - 0.5) * 7; mid.x += (Math.random() - 0.5) * 5;
+    const curve = new THREE.QuadraticBezierCurve3(cn.pos, mid, en.pos);
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(curve.getPoints(60)),
+      new THREE.LineBasicMaterial({ color: 0x818cf8, transparent: true, opacity: 0.07, depthWrite: false, blending: THREE.AdditiveBlending })
+    );
+    scene.add(line);
+    const particles = [0, 0.45].map(off => {
+      const m = new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xa5b4fc : 0xf59e0b, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), m);
+      scene.add(mesh);
+      return { mesh, t: off, speed: 0.14 + Math.random() * 0.18 };
+    });
+    conns.push({ line, curve, particles, cid: cand.id, eid });
+  });
+});
+
+const setConns = aid => {
+  conns.forEach(c => {
+    const on = c.cid === aid || c.eid === aid;
+    c.line.material.opacity = aid ? (on ? 0.55 : 0.02) : 0.07;
+    c.particles.forEach(p => { p.mesh.material.opacity = aid ? (on ? 0.9 : 0) : 0.85; p.mesh.visible = aid ? on : true; });
+  });
+};
+
+// ── INTERACTION ───────────────────────────────────────────────────────
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2(-9999, -9999);
+let hovId = null, selId = null;
+
+const setHov = id => Object.values(nodes).forEach(n => { n.mesh.material.uniforms.uHov.value = n.data.id === id ? 1 : 0; });
+const setSel = (id, mids = []) => Object.values(nodes).forEach(n => {
+  const active = n.data.id === id || mids.includes(n.data.id);
+  n.mesh.material.uniforms.uSel.value = n.data.id === id ? 1 : 0;
+  n.mesh.material.uniforms.uDim.value = (!active && id !== null) ? 1 : 0;
+});
+const clearAll = () => Object.values(nodes).forEach(n => {
+  n.mesh.material.uniforms.uSel.value = 0;
+  n.mesh.material.uniforms.uDim.value = 0;
+  n.mesh.material.uniforms.uHov.value = 0;
+});
+
+function tw(obj, target, dur, cb) {
+  const s = {}; Object.keys(target).forEach(k => s[k] = obj[k]);
+  const t0 = performance.now();
+  (function step() {
+    const p = Math.min((performance.now() - t0) / (dur * 1000), 1), e = 1 - Math.pow(1 - p, 3);
+    Object.keys(target).forEach(k => obj[k] = s[k] + (target[k] - s[k]) * e);
+    if (cb) cb(); if (p < 1) requestAnimationFrame(step);
+  })();
+}
+
+canvas.addEventListener('mousemove', ev => {
+  mouse.x = (ev.clientX / W()) * 2 - 1; mouse.y = -(ev.clientY / H()) * 2 + 1;
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObjects(Object.values(nodes).map(n => n.mesh), false)[0];
+  const id = hit?.object.userData.id || null;
+  if (id !== hovId) {
+    hovId = id; setHov(id); canvas.style.cursor = id ? 'pointer' : 'grab';
+    if (id && !selId) showTip(ev.clientX, ev.clientY, nodes[id]?.data);
+    else if (!id) hideTip();
+  } else if (id) moveTip(ev.clientX, ev.clientY);
+});
+
+canvas.addEventListener('click', ev => {
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObjects(Object.values(nodes).map(n => n.mesh), false)[0];
+  const id = hit?.object.userData.id || null;
+  if (!id || id === selId) { deselect(); return; }
+  select(id);
+});
+window.addEventListener('keydown', ev => { if (ev.key === 'Escape') deselect(); });
+document.getElementById('pcls').addEventListener('click', deselect);
+
+function select(id) {
+  selId = id;
+  const matches = matchesOf(id), mids = matches.map(m => m.id);
+  setSel(id, mids); setConns(id); openPanel(nodes[id].data, matches); hideTip();
+  controls.autoRotate = false;
+  const t = nodes[id].pos.clone(), cd = t.clone().normalize().multiplyScalar(22);
+  tw(camera.position, { x: t.x + cd.x, y: t.y + cd.y, z: t.z + cd.z }, 1.4, () => controls.update());
+  tw(controls.target, { x: t.x * 0.35, y: t.y * 0.35, z: t.z * 0.35 }, 1.4, () => controls.update());
+  document.getElementById('hint').textContent = 'Press Esc or x to deselect';
+}
+
+function deselect() {
+  selId = null; clearAll(); setConns(null); closePanel(); controls.autoRotate = true;
+  tw(camera.position, { x: 0, y: 2, z: 34 }, 1.2, () => controls.update());
+  tw(controls.target, { x: 0, y: 0, z: 0 }, 1.2, () => controls.update());
+  document.getElementById('hint').textContent = 'Click any node to explore · Scroll to zoom · Drag to rotate';
+}
+
+// ── UI ────────────────────────────────────────────────────────────────
+function openPanel(d, matches) {
+  const isE = d.type === 'employer';
+  const badge = document.getElementById('pbadge');
+  badge.textContent = isE ? 'Employer' : 'Candidate';
+  badge.className = 'badge ' + (isE ? 'emp' : 'cand');
+  document.getElementById('pname').textContent = d.name;
+  document.getElementById('pdesc').textContent = d.desc || (isE ? `${d.industry} · ${matches.length} matched candidates` : `${d.acc} · ${d.score}% match score`);
+  const tags = document.getElementById('ptags'); tags.innerHTML = '';
+  if (isE) { (d.roles || []).forEach(r => addTag(tags, r, 'sk')); (d.acc || []).slice(0, 3).forEach(a => addTag(tags, a, 'ac')); addTag(tags, d.industry, 'in'); }
+  else { (d.skills || []).forEach(s => addTag(tags, s, 'sk')); if (d.acc) addTag(tags, d.acc, 'ac'); }
+  document.getElementById('mtitle').textContent = isE ? `${matches.length} Matched Candidates` : `${matches.length} Matched Employer${matches.length !== 1 ? 's' : ''}`;
+  const list = document.getElementById('mlist'); list.innerHTML = '';
+  matches.forEach(m => {
+    const li = document.createElement('li');
+    const dot = document.createElement('span'); dot.className = 'mdot'; dot.style.background = isE ? '#818cf8' : '#f59e0b';
+    const nm = document.createElement('span'); nm.textContent = m.name;
+    const sc = document.createElement('span'); sc.className = 'msc'; sc.textContent = isE ? `${m.score}%` : (m.roles ? `${m.roles.length} roles` : '');
+    li.append(dot, nm, sc); li.addEventListener('click', () => select(m.id)); list.appendChild(li);
+  });
+  document.getElementById('panel').classList.add('open');
+}
+function closePanel() { document.getElementById('panel').classList.remove('open'); }
+function addTag(c, t, cls) { const s = document.createElement('span'); s.className = `tag ${cls}`; s.textContent = t; c.appendChild(s); }
+
+const tipEl = document.getElementById('tip');
+function showTip(x, y, d) {
+  if (!d) return;
+  tipEl.innerHTML = `<strong>${d.name}</strong><br><span style="color:#94a3b8;font-size:11px">${d.type === 'employer' ? d.industry : d.acc}</span>`;
+  moveTip(x, y); tipEl.classList.add('on');
+}
+function moveTip(x, y) { const l = x + 195 > W() ? x - 200 : x + 14; tipEl.style.left = l + 'px'; tipEl.style.top = (y + 14) + 'px'; }
+function hideTip() { tipEl.classList.remove('on'); }
+
+function countUp(el, target, dur = 1100) {
+  const t0 = performance.now();
+  (function tick() { const p = Math.min((performance.now() - t0) / dur, 1); el.textContent = Math.round((1 - Math.pow(1 - p, 3)) * target); if (p < 1) requestAnimationFrame(tick); })();
+}
+const totalM = CAND.reduce((a, c) => a + c.employers.length, 0);
+setTimeout(() => { countUp(document.getElementById('nc'), CAND.length); countUp(document.getElementById('ne'), EMP.length, 900); countUp(document.getElementById('nm'), totalM, 1400); }, 1000);
+
+function updateLabels() {
+  Object.values(nodes).forEach(n => {
+    const v = n.mesh.position.clone().project(camera);
+    const x = (v.x * 0.5 + 0.5) * W(), y = (-(v.y * 0.5 - 0.5)) * H();
+    const isE = n.data.type === 'employer';
+    n.lbl.style.left = x + 'px'; n.lbl.style.top = (y + (isE ? -44 : -30)) + 'px';
+    n.lbl.style.opacity = v.z > 1 ? '0' : '1';
+  });
+}
+
+setTimeout(() => document.getElementById('load').classList.add('gone'), 1100);
+
+// ── LOOP ──────────────────────────────────────────────────────────────
+let then = performance.now();
+(function loop() {
+  requestAnimationFrame(loop);
+  const now = performance.now(), dt = Math.min((now - then) / 1000, 0.05); then = now;
+  const t = now / 1000;
+  starMat.uniforms.uTime.value = t;
+  Object.values(nodes).forEach(n => n.mesh.material.uniforms.uTime.value = t);
+  conns.forEach(c => c.particles.forEach(p => { p.t = (p.t + p.speed * dt) % 1; c.curve.getPoint(p.t, p.mesh.position); }));
+  controls.update(); composer.render(); updateLabels();
+})();
+</script>
 </body>
 </html>
